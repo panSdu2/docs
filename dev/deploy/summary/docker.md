@@ -267,7 +267,7 @@ docker rm [容器id|容器名]
 
 - 通过Dockerfile
 
-    暂不涉及。
+    使用Dockerfile可对镜像作出更多设置。
 
 ### 镜像文件
 
