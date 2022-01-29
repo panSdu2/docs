@@ -267,7 +267,35 @@ docker rm [容器id|容器名]
 
 - 通过Dockerfile
 
-    使用Dockerfile可对镜像作出更多设置。
+    使用Dockerfile构建脚本可对镜像的构建作出更多设置。
+
+    - Dockerfile命令
+
+        - FROM [镜像]：指定基础镜像。
+        - COPY [源] [目标]：从主机复制到镜像。
+        - ADD [源] [目标]：从主机复制到镜像并解压。
+        - CMD [命令]：docker run时默认运行的命令；唯一；可被run的参数覆盖。
+        - ENTRYPOINT [命令]：docker run时自动运行的名利；唯一；不可被run的参数覆盖。
+        - RUN [命令]：docker build是运行的命令。
+        - ENV [键] [值]：设置环境变量，上下文为镜像。
+        - ARG [键] [值]：设置环境变量，上下文为Dockerfile。
+        - VOLUME [路径]：定义默认数据卷。
+        - EXPOSE [端口]：声明端口。
+        - WORKDIR [路径]：指定Dockerfile的工作路径。
+        - USER [用户名[:用户组]]：定义执行Dockerfile的用户或用户组。
+        - HEALTHCHECK [命令]：指定程序监控Docker容器运行状态。
+        - ONBUILD [命令]：延迟命令的执行到下一次构建。
+        - LABEL [键]=[值]：为镜像添加元数据。
+
+    - 镜像构建
+
+        ```shell
+        docker build -t [镜像名[:镜像标签]] .
+        ```
+
+        最后的`.`表示工作目录，放有名为`Dockerfile`的构建脚本。
+
+    - 例子：容器运行启动脚本
 
 ### 镜像文件
 
