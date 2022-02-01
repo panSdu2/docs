@@ -274,15 +274,15 @@ docker rm [容器id|容器名]
         - FROM [镜像]：指定基础镜像。
         - COPY [源] [目标]：从主机复制到镜像。
         - ADD [源] [目标]：从主机复制到镜像并解压。
-        - CMD [命令]：docker run时默认运行的命令；唯一；可被run的参数覆盖。
-        - ENTRYPOINT [命令]：docker run时自动运行的名利；唯一；不可被run的参数覆盖。
-        - RUN [命令]：docker build是运行的命令。
+        - CMD [命令[, 参数...]]：docker run时默认运行的命令；唯一；可被run的CMD参数覆盖。
+        - ENTRYPOINT [命令[, 参数...]]：docker run时自动运行的名利；唯一；不会被run的CMD参数覆盖，而是作为其参数追加。
+        - RUN [命令]：docker build时在镜像内运行的命令。
         - ENV [键] [值]：设置环境变量，上下文为镜像。
         - ARG [键] [值]：设置环境变量，上下文为Dockerfile。
         - VOLUME [路径]：定义默认数据卷。
         - EXPOSE [端口]：声明端口。
-        - WORKDIR [路径]：指定Dockerfile的工作路径。
-        - USER [用户名[:用户组]]：定义执行Dockerfile的用户或用户组。
+        - WORKDIR [路径]：指定镜像内部工作目录，类似cd。
+        - USER [用户名[:用户组]]：定义执行Dockerfile时内部的用户或用户组。
         - HEALTHCHECK [命令]：指定程序监控Docker容器运行状态。
         - ONBUILD [命令]：延迟命令的执行到下一次构建。
         - LABEL [键]=[值]：为镜像添加元数据。
@@ -295,7 +295,81 @@ docker rm [容器id|容器名]
 
         最后的`.`表示工作目录，放有名为`Dockerfile`的构建脚本。
 
-    - 例子：容器运行启动脚本
+    - 例子：容器运行时自动启动脚本
+
+        1. 准备基础镜像（可选）
+
+            通过docker pull拉取远程镜像；或通过容器commit制作镜像；或通过Dockerfile构建镜像。
+
+            如果跳过此步骤，且Dockerfile中找不到对应的基础镜像，则docker会试图先从远程拉取镜像。
+
+        2. 准备脚本
+
+            以脚本`~/docker-start-test.sh`为例：
+
+            ```shell
+            #!/bin/bash
+            cat > test.txt << EOF
+            123
+            456
+            789
+            EOF
+            ```
+
+            脚本中只是新建了一个文本文件，便于我们验证脚本是否成功执行。
+
+        3. 准备Dockerfile
+
+            创建`~/Dockerfile`，里面写入如下内容：
+
+            ```shell
+            FROM ubuntu:18.04
+            COPY docker-start-test.sh /root/start.sh
+            RUN chmod +x /root/start.sh
+            WORKDIR /root
+            ENTRYPOINT ./start.sh && tail -f /dev/null
+            ```
+
+            解释：
+
+            - 使用的基础镜像为ubuntu:18.04
+            - 将构建镜像工作目录中的`docker-start-test.sh`脚本复制为镜像中的`/root/start.sh`
+            - 执行命令，赋予复制后的脚本运行权限
+            - 设置内部工作目录为`/root`，类似于`cd /root`
+            - 容器运行时执行`./start.sh && tail -f /dev/null`，其中`tail -f /dev/null`是为了使容器持续运行不会立马终止。
+
+        4. 构建镜像
+
+            ```shell
+            cd ~
+            docker build -t test-ubuntu .
+            ```
+
+            以用户工作目录为构建镜像的工作目录，构建`test-ubuntu`镜像。构建将使用工作目录中的Dockerfile。
+
+        5.  运行并测试
+
+            ```shell
+            docker run -itd --name test test-ubuntu
+            docker exec -it test bash
+            ```
+
+            启动并进入容器，然后
+
+            ```shell
+            ls ~
+            cat ~/test.txt
+            ```
+            
+            此时可以看到`~/test.txt`存在并且其中的内容和我们在脚本中定义的一致，说明脚本在容器运行时自动启动。
+
+        6.  删除上述测试容器与镜像（可选）
+
+            ```shell
+            docker stop test && docker rm test && docker image rm test-ubuntu
+            ```
+
+            将上面测试例子中的容器和镜像删除。
 
 ### 镜像文件
 
